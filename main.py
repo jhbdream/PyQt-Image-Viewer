@@ -47,6 +47,11 @@ class Iwindow(QtGui.QMainWindow, gui):
         self.toggle_rect.toggled.connect(self.action_rect)
         self.toggle_move.toggled.connect(self.action_move)
 
+        self.undo.clicked.connect(self.image_viewer.funundo)
+        self.clear_all.clicked.connect(self.action_clear_all)
+        self.redo.clicked.connect(self.action_redo)
+
+
     def selectDir(self):
         ''' Select a directory, make list of images in it and display the first image in the list. '''
         # open 'select folder' dialog box
@@ -65,7 +70,7 @@ class Iwindow(QtGui.QMainWindow, gui):
 
         # display first image and enable Pan 
         self.cntr = 0
-        self.image_viewer.enablePan(True)
+        self.image_viewer.enablePan(False)
         self.image_viewer.loadImage(self.logs[self.cntr]['path'])
         self.qlist_images.setItemSelected(self.items[self.cntr], True)
 
@@ -100,18 +105,30 @@ class Iwindow(QtGui.QMainWindow, gui):
     def action_line(self):
         if self.toggle_line.isChecked():
             self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
-            self.image_viewer.enablePan(False)
-
+            self.image_viewer.funmode(1)
+            self.image_viewer.enablePan(True)
+        
     def action_rect(self):
         if self.toggle_rect.isChecked():
             self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
+            self.image_viewer.funmode(2)
             self.image_viewer.enablePan(False)
 
     def action_move(self):
         if self.toggle_move.isChecked():
             self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+            self.image_viewer.funmode(3)
             self.image_viewer.enablePan(True)
 
+    def action_undo(self):
+        self.image_viewer.funundo()
+
+    def action_clear_all(self):
+        self.image_viewer.funclear_all()
+
+    def action_redo(self):
+        self.image_viewer.funredo()
+   
 def main():
     app = QtGui.QApplication(sys.argv)
     app.setStyle(QtGui.QStyleFactory.create("Cleanlooks"))
