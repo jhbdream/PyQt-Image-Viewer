@@ -6,6 +6,7 @@ from PyQt4 import QtCore, QtGui, uic
 
 from actions import ImageViewer
 import sys, os
+import cv2
 
 gui = uic.loadUiType("main.ui")[0]     # load UI file designed in Qt Designer
 VALID_FORMAT = ('.BMP', '.GIF', '.JPG', '.JPEG', '.PNG', '.PBM', '.PGM', '.PPM', '.TIFF', '.XBM')  # Image formats supported by Qt
@@ -37,11 +38,11 @@ class Iwindow(QtGui.QMainWindow, gui):
         self.next_im.clicked.connect(self.nextImg)
         self.prev_im.clicked.connect(self.prevImg)
         self.qlist_images.itemClicked.connect(self.item_click)
-        # self.save_im.clicked.connect(self.saveImg)
+        self.save_im.clicked.connect(self.saveImg)
 
-        self.zoom_plus.clicked.connect(self.image_viewer.zoomPlus)
-        self.zoom_minus.clicked.connect(self.image_viewer.zoomMinus)
-        self.reset_zoom.clicked.connect(self.image_viewer.resetZoom)
+        self.zoom_plus.clicked.connect(self.zoomPlus)
+        self.zoom_minus.clicked.connect(self.zoomMinus)
+        self.reset_zoom.clicked.connect(self.resetZoom)
 
         self.toggle_line.toggled.connect(self.action_line)
         self.toggle_rect.toggled.connect(self.action_rect)
@@ -83,20 +84,45 @@ class Iwindow(QtGui.QMainWindow, gui):
             self.image_viewer.onResize()
 
     def nextImg(self):
-        if self.cntr < self.numImages -1:
-            self.cntr += 1
-            self.image_viewer.loadImage(self.logs[self.cntr]['path'])
-            self.qlist_images.setItemSelected(self.items[self.cntr], True)
-        else:
-            QtGui.QMessageBox.warning(self, 'Sorry', 'No more Images!')
+        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.image_viewer.funmode(4)
+        self.image_viewer.score="A"
+        self.image_viewer.enablePan(True)
 
     def prevImg(self):
-        if self.cntr > 0:
-            self.cntr -= 1
-            self.image_viewer.loadImage(self.logs[self.cntr]['path'])
-            self.qlist_images.setItemSelected(self.items[self.cntr], True)
-        else:
-            QtGui.QMessageBox.warning(self, 'Sorry', 'No previous Image!')
+        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.image_viewer.funmode(4)
+        self.image_viewer.score="A+"
+        self.image_viewer.enablePan(True)
+
+    def zoomPlus(self):
+        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.image_viewer.funmode(4)
+        self.image_viewer.score="B+"
+        self.image_viewer.enablePan(True)
+
+    def zoomMinus(self):
+        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.image_viewer.funmode(4)
+        self.image_viewer.score="C"
+        self.image_viewer.enablePan(True)
+
+    def resetZoom(self):
+        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.image_viewer.funmode(4)
+        self.image_viewer.score="B"
+        self.image_viewer.enablePan(True)
+
+    def saveImg(self):
+        #cv2.imwrite(self.logs[self.cntr]['path'],self.image_viewer.cvimage)
+        print self.logs[self.cntr]['path']
+        path = self.logs[self.cntr]['path'].split('.')
+        newpath = path[0] + "ok." + path[1] 
+        print newpath
+        SAVEIMG = cv2.cvtColor(self.image_viewer.cvimage, cv2.COLOR_RGB2BGR)
+
+        cv2.imwrite(newpath,SAVEIMG)
+
 
     def item_click(self, item):
         self.cntr = self.items.index(item)
@@ -112,7 +138,7 @@ class Iwindow(QtGui.QMainWindow, gui):
         if self.toggle_rect.isChecked():
             self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
             self.image_viewer.funmode(2)
-            self.image_viewer.enablePan(False)
+            self.image_viewer.enablePan(True)
 
     def action_move(self):
         if self.toggle_move.isChecked():

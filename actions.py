@@ -17,6 +17,8 @@ class ImageViewer:
         self.qpixmap = QPixmap()                              # qpixmap to fill the qlabel_image
         self.cvimage = None
         self.srcimg = None
+        self.score = None
+
         self.start_point = (0, 0) 
 
         # Ending coordinate, here (220, 220) 
@@ -105,11 +107,15 @@ class ImageViewer:
                 self.update()
 
             if self.mode == 2:
-                self.start_point=(x * self.cvimage.shape[1] / self.qlabel_image.width(),y* self.cvimage.shape[0] / self.qlabel_image.height())
-                self.srcimg = self.cvimage
+                #self.start_point=(x * self.cvimage.shape[1] / self.qlabel_image.width(),y* self.cvimage.shape[0] / self.qlabel_image.height())
+                #self.srcimg = self.cvimage
                 #self.cvimage = self.huarect.dwan()
                 #self.update()  
-
+                self.drwaWrong(x,y)
+                self.update()
+            if self.mode == 4:
+                self.drwaScore(x,y)
+                self.update()
     def mouseMoveAction(self, QMouseEvent):
         x, y = QMouseEvent.pos().x(), QMouseEvent.pos().y()
         if self.pressed:
@@ -117,17 +123,15 @@ class ImageViewer:
             self.position = self.anchor[0] - dx, self.anchor[1] - dy    # update pan position using drag vector
             self.update()                                               # show the image with udated pan position
 
-        if self.mode == 2:
-            self.end_point=(x * self.cvimage.shape[1] / self.qlabel_image.width(),y* self.cvimage.shape[0] / self.qlabel_image.height())
-            self.cvimage = self.srcimg.copy()
-            cv2.rectangle(self.cvimage, self.start_point, self.end_point, (255,0,0), 1) 
-            self.update()  
+        #if self.mode == 2:
+            #self.end_point=(x * self.cvimage.shape[1] / self.qlabel_image.width(),y* self.cvimage.shape[0] / self.qlabel_image.height())
+            #self.cvimage = self.srcimg.copy()
+            #cv2.rectangle(self.cvimage, self.start_point, self.end_point, (255,0,0), 1) 
+            #self.update()  
 
     def mouseReleaseAction(self, QMouseEvent):
         self.pressed = None                                             # clear the starting point of drag vector
-        if self.mode == 2:    
-            #self.cvimage = self.huarect.dwan().copy()
-            self.update()  
+        
 
     def zoomPlus(self):
         self.zoomX += 1
@@ -182,3 +186,24 @@ class ImageViewer:
         pts = np.array([[posx-lengthx, posy-lengthx],  [posx, posy], [posx+lengthy, posy-lengthy]], np.int32)
         pts = pts.reshape((-1, 1, 2))
         cv2.polylines(self.cvimage, [pts], False, (255, 0, 0), 2)
+    
+    def drwaWrong(self,posx,posy):
+        print "drwa wrong"
+        self.history.push(self.cvimage.copy())
+        lengthx =  self.qlabel_image.width() * self.zoomX * self.cvimage.shape[1] / self.qlabel_image.width() / 30 
+        lengthy =  self.qlabel_image.height() * self.zoomX * self.cvimage.shape[0] / self.qlabel_image.height() / 10
+        posx = posx  * self.cvimage.shape[1] / self.qlabel_image.width()
+        posy = posy  * self.cvimage.shape[0] / self.qlabel_image.height()
+        print posx
+        cv2.line(self.cvimage,(posx-lengthx,posy),(posx+lengthx,posy),(255, 0, 0),3)
+    
+    def drwaScore(self,posx,posy):
+        print "drwa wrong"
+        self.history.push(self.cvimage.copy())
+        lengthx =  self.qlabel_image.width() * self.zoomX * self.cvimage.shape[1] / self.qlabel_image.width() / 140 
+        lengthy =  self.qlabel_image.height() * self.zoomX * self.cvimage.shape[0] / self.qlabel_image.height() / 10
+        posx = posx  * self.cvimage.shape[1] / self.qlabel_image.width()
+        posy = posy  * self.cvimage.shape[0] / self.qlabel_image.height()
+        print posx
+        #cv2.line(self.cvimage,(posx-lengthx,posy),(posx+lengthx,posy),(255, 0, 0),2)
+        cv2.putText(self.cvimage, self.score, (posx,posy), cv2.FONT_HERSHEY_SIMPLEX, lengthx, (255, 0, 0), 2)
