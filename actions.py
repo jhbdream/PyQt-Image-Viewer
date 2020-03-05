@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from PyQt4.QtGui import QImage, QPixmap, QPainter
 from PyQt4 import QtCore, QtGui
 import cv2
@@ -30,7 +32,7 @@ class ImageViewer:
         self.panFlag = False        # to enable or disable pan
         self.pressed = False
         self.mode = 0
-        self.history = Loopqueue(20)
+        self.history = Loopqueue(40)
         self.qlabel_image.setSizePolicy(QtGui.QSizePolicy.Ignored, QtGui.QSizePolicy.Ignored)
         self.__connectEvents()
         self.queue = deque()
@@ -51,8 +53,10 @@ class ImageViewer:
 
     def loadImage(self, imagePath):
         ''' To load and display new image.'''
+        print imagePath
         # open raw file by opencv
-        self.cvimage = cv2.imread(imagePath)
+        #self.cvimage = cv2.imread(imagePath)
+        self.cvimage = cv2.imdecode(np.fromfile(imagePath,dtype=np.uint8),cv2.IMREAD_COLOR)
         # convert image to qimage to show
         self.cvimage = cv2.cvtColor(self.cvimage, cv2.COLOR_BGR2RGB)
         self.zoomX = 1
@@ -67,8 +71,8 @@ class ImageViewer:
             So, I tried to include only the necessary operations required just for these tasks. 
         '''
         
-        self.cvimage_scale =  cv2.resize(self.cvimage, (self.qlabel_image.width(), self.qlabel_image.height()))
-
+        #self.cvimage_scale =  cv2.resize(self.cvimage, (self.qlabel_image.width(), self.qlabel_image.height()))
+        self.cvimage_scale = self.cvimage
         self.qimage_scaled = QtGui.QImage(self.cvimage_scale, self.cvimage_scale.shape[1], self.cvimage_scale.shape[0],self.cvimage_scale.strides[0], QtGui.QImage.Format_RGB888)
         ##self.qimage = QImage(imagePath)
         self.qpixmap = QPixmap(self.qlabel_image.size())
@@ -101,9 +105,11 @@ class ImageViewer:
         if self.panFlag:
             self.pressed = QMouseEvent.pos()    # starting point of drag vector
             self.anchor = self.position         # save the pan position when panning starts
-            
+            px, py = self.anchor
+            x = x+ px
+            y = y +py
             if self.mode == 1:
-                self.drwaDuiGou(x,y)
+                self.drwaDuiGou( x,y )
                 self.update()
 
             if self.mode == 2:
@@ -113,9 +119,15 @@ class ImageViewer:
                 #self.update()  
                 self.drwaWrong(x,y)
                 self.update()
+
             if self.mode == 4:
                 self.drwaScore(x,y)
                 self.update()
+
+            if self.mode == 11:
+                self.drwacuohao(x,y)
+                self.update()
+
     def mouseMoveAction(self, QMouseEvent):
         x, y = QMouseEvent.pos().x(), QMouseEvent.pos().y()
         if self.pressed:
@@ -181,8 +193,8 @@ class ImageViewer:
         self.history.push(self.cvimage.copy())
         lengthx =  self.qlabel_image.width() * self.zoomX * self.cvimage.shape[1] / self.qlabel_image.width() / 20 
         lengthy =  self.qlabel_image.height() * self.zoomX * self.cvimage.shape[0] / self.qlabel_image.height() / 10
-        posx = posx  * self.cvimage.shape[1] / self.qlabel_image.width()
-        posy = posy  * self.cvimage.shape[0] / self.qlabel_image.height()
+        #posx = posx  * self.cvimage.shape[1] / self.qlabel_image.width()
+        #posy = posy  * self.cvimage.shape[0] / self.qlabel_image.height()
         pts = np.array([[posx-lengthx, posy-lengthx],  [posx, posy], [posx+lengthy, posy-lengthy]], np.int32)
         pts = pts.reshape((-1, 1, 2))
         cv2.polylines(self.cvimage, [pts], False, (255, 0, 0), 2)
@@ -192,18 +204,22 @@ class ImageViewer:
         self.history.push(self.cvimage.copy())
         lengthx =  self.qlabel_image.width() * self.zoomX * self.cvimage.shape[1] / self.qlabel_image.width() / 30 
         lengthy =  self.qlabel_image.height() * self.zoomX * self.cvimage.shape[0] / self.qlabel_image.height() / 10
-        posx = posx  * self.cvimage.shape[1] / self.qlabel_image.width()
-        posy = posy  * self.cvimage.shape[0] / self.qlabel_image.height()
+        #posx = posx  * self.cvimage.shape[1] / self.qlabel_image.width()
+        #posy = posy  * self.cvimage.shape[0] / self.qlabel_image.height()
         print posx
         cv2.line(self.cvimage,(posx-lengthx,posy),(posx+lengthx,posy),(255, 0, 0),3)
-    
+
     def drwaScore(self,posx,posy):
         print "drwa wrong"
         self.history.push(self.cvimage.copy())
-        lengthx =  self.qlabel_image.width() * self.zoomX * self.cvimage.shape[1] / self.qlabel_image.width() / 140 
-        lengthy =  self.qlabel_image.height() * self.zoomX * self.cvimage.shape[0] / self.qlabel_image.height() / 10
-        posx = posx  * self.cvimage.shape[1] / self.qlabel_image.width()
-        posy = posy  * self.cvimage.shape[0] / self.qlabel_image.height()
+        cv2.putText(self.cvimage, self.score, (posx,posy), cv2.FONT_HERSHEY_TRIPLEX, 2, (255, 0, 0), 2)
+
+    def drwacuohao(self,posx,posy):
+        self.history.push(self.cvimage.copy())
+        lengthx =  self.qlabel_image.width() * self.zoomX * self.cvimage.shape[1] / self.qlabel_image.width() / 50 
+        lengthy =  self.qlabel_image.height() * self.zoomX * self.cvimage.shape[0] / self.qlabel_image.height() / 50
+        #posx = posx  * self.cvimage.shape[1] / self.qlabel_image.width()
+        #posy = posy  * self.cvimage.shape[0] / self.qlabel_image.height()
         print posx
-        #cv2.line(self.cvimage,(posx-lengthx,posy),(posx+lengthx,posy),(255, 0, 0),2)
-        cv2.putText(self.cvimage, self.score, (posx,posy), cv2.FONT_HERSHEY_SIMPLEX, lengthx, (255, 0, 0), 2)
+        cv2.line(self.cvimage,(posx-lengthx,posy-lengthy),(posx+lengthx,posy+lengthy),(255, 0, 0),2)
+        cv2.line(self.cvimage,(posx+lengthx,posy-lengthy),(posx-lengthx,posy+lengthy),(255, 0, 0),2)

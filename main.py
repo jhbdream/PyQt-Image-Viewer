@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 
 ''' A basic GUi to use ImageViewer class to show its functionalities and use cases. '''
 
@@ -16,8 +17,10 @@ def getImages(folder):
     image_list = []
     if os.path.isdir(folder):
         for file in os.listdir(folder):
+            print file
             if file.upper().endswith(VALID_FORMAT):
                 im_path = os.path.join(folder, file)
+                #im_path = unicode(im_path, "utf-8")
                 image_obj = {'name': file, 'path': im_path }
                 image_list.append(image_obj)
     return image_list
@@ -56,7 +59,8 @@ class Iwindow(QtGui.QMainWindow, gui):
     def selectDir(self):
         ''' Select a directory, make list of images in it and display the first image in the list. '''
         # open 'select folder' dialog box
-        self.folder = str(QtGui.QFileDialog.getExistingDirectory(self, "Select Directory"))
+        self.folder = unicode(QtGui.QFileDialog.getExistingDirectory(self, "Select Directory"))
+        print self.folder
         if not self.folder:
             QtGui.QMessageBox.warning(self, 'No Folder Selected', 'Please select a valid Folder')
             return
@@ -84,44 +88,45 @@ class Iwindow(QtGui.QMainWindow, gui):
             self.image_viewer.onResize()
 
     def nextImg(self):
-        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
         self.image_viewer.funmode(4)
         self.image_viewer.score="A"
         self.image_viewer.enablePan(True)
 
     def prevImg(self):
-        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
         self.image_viewer.funmode(4)
         self.image_viewer.score="A+"
         self.image_viewer.enablePan(True)
 
     def zoomPlus(self):
-        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
         self.image_viewer.funmode(4)
-        self.image_viewer.score="B+"
+        self.image_viewer.score="A-"
         self.image_viewer.enablePan(True)
 
     def zoomMinus(self):
-        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
         self.image_viewer.funmode(4)
-        self.image_viewer.score="C"
+        self.image_viewer.score="B"
         self.image_viewer.enablePan(True)
 
     def resetZoom(self):
-        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
         self.image_viewer.funmode(4)
-        self.image_viewer.score="B"
+        self.image_viewer.score="B+"
         self.image_viewer.enablePan(True)
 
     def saveImg(self):
         #cv2.imwrite(self.logs[self.cntr]['path'],self.image_viewer.cvimage)
         print self.logs[self.cntr]['path']
         path = self.logs[self.cntr]['path'].split('.')
-        newpath = path[0] + "ok." + path[1] 
+        newpath = path[0] + "OK." + path[1] 
         print newpath
         SAVEIMG = cv2.cvtColor(self.image_viewer.cvimage, cv2.COLOR_RGB2BGR)
 
-        cv2.imwrite(newpath,SAVEIMG)
+        #cv2.imwrite(newpath,SAVEIMG)
+        cv2.imencode('.jpg',SAVEIMG)[1].tofile(newpath)#保存图片
 
 
     def item_click(self, item):
@@ -150,7 +155,9 @@ class Iwindow(QtGui.QMainWindow, gui):
         self.image_viewer.funundo()
 
     def action_clear_all(self):
-        self.image_viewer.funclear_all()
+        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
+        self.image_viewer.funmode(11)
+        self.image_viewer.enablePan(True)
 
     def action_redo(self):
         self.image_viewer.funredo()
