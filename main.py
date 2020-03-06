@@ -108,13 +108,13 @@ class Iwindow(QtGui.QMainWindow, gui):
     def zoomMinus(self):
         self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
         self.image_viewer.funmode(4)
-        self.image_viewer.score="B"
+        self.image_viewer.score="C"
         self.image_viewer.enablePan(True)
 
     def resetZoom(self):
         self.qlabel_image.setCursor(QtCore.Qt.CrossCursor)
         self.image_viewer.funmode(4)
-        self.image_viewer.score="B+"
+        self.image_viewer.score="B"
         self.image_viewer.enablePan(True)
 
     def saveImg(self):
@@ -155,9 +155,8 @@ class Iwindow(QtGui.QMainWindow, gui):
         self.image_viewer.funundo()
 
     def action_clear_all(self):
-        self.qlabel_image.setCursor(QtCore.Qt.OpenHandCursor)
-        self.image_viewer.funmode(11)
-        self.image_viewer.enablePan(True)
+        self.image_viewer.clear_all()
+
 
     def action_redo(self):
         self.image_viewer.funredo()

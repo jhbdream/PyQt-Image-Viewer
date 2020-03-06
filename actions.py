@@ -48,7 +48,7 @@ class ImageViewer:
         self.qpixmap = QPixmap(self.qlabel_image.size())
         self.qpixmap.fill(QtCore.Qt.gray)
         #self.qimage_scaled = self.qimage.scaled(self.qlabel_image.width() * self.zoomX, self.qlabel_image.height() * self.zoomX, QtCore.Qt.KeepAspectRatio)
-        self.cvimage_scale =  cv2.resize(self.cvimage, (self.qlabel_image.width() * self.zoomX, self.qlabel_image.height() * self.zoomX))
+        #self.cvimage_scale =  cv2.resize(self.cvimage, (self.qlabel_image.width() * self.zoomX, self.qlabel_image.height() * self.zoomX))
         self.update()
 
     def loadImage(self, imagePath):
@@ -71,8 +71,15 @@ class ImageViewer:
             So, I tried to include only the necessary operations required just for these tasks. 
         '''
         
-        #self.cvimage_scale =  cv2.resize(self.cvimage, (self.qlabel_image.width(), self.qlabel_image.height()))
-        self.cvimage_scale = self.cvimage
+        #dim = self.qlabel_image.width() /  self.cvimage.shape[1]
+        #self.cvimage_scale =  cv2.resize(self.cvimage,None,dim,dim,interpolation = cv2.INTER_AREA)
+        #self.cvimage_scale = self.process_image(self.cvimage,self.qlabel_image.width() )
+        target_size=[self.qlabel_image.height(),self.qlabel_image.width()]
+
+        self.cvimage_scale = self.resize_img_keep_ratio(self.cvimage,target_size)
+
+        
+        #self.cvimage_scale = self.cvimage
         self.qimage_scaled = QtGui.QImage(self.cvimage_scale, self.cvimage_scale.shape[1], self.cvimage_scale.shape[0],self.cvimage_scale.strides[0], QtGui.QImage.Format_RGB888)
         ##self.qimage = QImage(imagePath)
         self.qpixmap = QPixmap(self.qlabel_image.size())
@@ -102,12 +109,22 @@ class ImageViewer:
 
     def mousePressAction(self, QMouseEvent):
         x, y = QMouseEvent.pos().x(), QMouseEvent.pos().y()
+       
         if self.panFlag:
             self.pressed = QMouseEvent.pos()    # starting point of drag vector
             self.anchor = self.position         # save the pan position when panning starts
             px, py = self.anchor
-            x = x+ px
-            y = y +py
+           
+            #posx =  x - ( self.qlabel_image.width() - self.cvimage_scale.shape[1] ) / 2
+            #posy = y
+            print 'x:[%d] y:[%d] qlabel_image.width:[%d] cvimage_scale.shape:[%d] '% (x,y,self.qlabel_image.width(),self.cvimage_scale.shape[1])
+
+
+            x = x  * self.cvimage.shape[1] / self.cvimage_scale.shape[1]
+            y = y  * self.cvimage.shape[0] / self.cvimage_scale.shape[0]
+            
+            #x = posx + px
+            #y = posy + py
             if self.mode == 1:
                 self.drwaDuiGou( x,y )
                 self.update()
@@ -119,14 +136,14 @@ class ImageViewer:
                 #self.update()  
                 self.drwaWrong(x,y)
                 self.update()
+            if self.mode == 3:
+                self.drwacuohao(x,y)
+                self.update()
 
             if self.mode == 4:
                 self.drwaScore(x,y)
                 self.update()
 
-            if self.mode == 11:
-                self.drwacuohao(x,y)
-                self.update()
 
     def mouseMoveAction(self, QMouseEvent):
         x, y = QMouseEvent.pos().x(), QMouseEvent.pos().y()
@@ -223,3 +240,38 @@ class ImageViewer:
         print posx
         cv2.line(self.cvimage,(posx-lengthx,posy-lengthy),(posx+lengthx,posy+lengthy),(255, 0, 0),2)
         cv2.line(self.cvimage,(posx+lengthx,posy-lengthy),(posx-lengthx,posy+lengthy),(255, 0, 0),2)
+
+
+    def process_image(self,img, min_side):
+        size = img.shape
+        h, w = size[0], size[1]
+        #长边缩放为min_side
+        scale = max(w, h) / float(min_side)
+        new_w, new_h = int(w/scale), int(h/scale)
+        resize_img = cv2.resize(img, (new_w, new_h))
+        # 填充至min_side * min_side
+        if new_w % 2 != 0 and new_h % 2 == 0:
+            top, bottom, left, right = (min_side-new_h)/2, (min_side-new_h)/2, (min_side-new_w)/2 + 1, (min_side-new_w)/2
+        elif new_h % 2 != 0 and new_w % 2 == 0:
+            top, bottom, left, right = (min_side-new_h)/2 + 1, (min_side-new_h)/2, (min_side-new_w)/2, (min_side-new_w)/2
+        elif new_h % 2 == 0 and new_w % 2 == 0:
+            top, bottom, left, right = (min_side-new_h)/2, (min_side-new_h)/2, (min_side-new_w)/2, (min_side-new_w)/2
+        else:
+            top, bottom, left, right = (min_side-new_h)/2 + 1, (min_side-new_h)/2, (min_side-new_w)/2 + 1, (min_side-new_w)/2
+        pad_img = cv2.copyMakeBorder(resize_img, int(top), int(bottom), int(left), int(right), cv2.BORDER_CONSTANT, value=[0,0,0]) #从图像边界向上,下,左,右扩的像素数目
+
+        return pad_img
+
+    def resize_img_keep_ratio(self,img,target_size):
+        old_size= img.shape[0:2]
+        print len(old_size)
+        #ratio = min(float(target_size)/(old_size))
+        ratio = min(float(target_size[i])/(old_size[i]) for i in range(len(old_size)))
+        new_size = tuple([int(i*ratio) for i in old_size])
+        img = cv2.resize(img,(new_size[1], new_size[0]))
+        #pad_w = target_size[1] - new_size[1]
+        #pad_h = target_size[0] - new_size[0]
+        #top,bottom = pad_h//2, pad_h-(pad_h//2)
+        #left,right = pad_w//2, pad_w -(pad_w//2)
+        #img_new = cv2.copyMakeBorder(img,top,bottom,left,right,cv2.BORDER_CONSTANT,None,(255,255,255))
+        return img
